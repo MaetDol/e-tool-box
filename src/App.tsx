@@ -34,8 +34,19 @@ function App() {
       setNodes(nodes.map((node) => (node.id === newNode.id ? newNode : node)));
       targetBasePoint.current = newNode;
     },
-    () => {
-      targetBasePoint.current = null;
+    ([x, y]) => {
+      const conflictedConnector = getNearByConnector(
+        [x, y],
+        nodeMapRef.current
+      );
+      if (!conflictedConnector) {
+        return;
+      }
+      if (conflictedConnector.node.id === targetBasePoint.current.id) {
+        return;
+      }
+
+      // 새 라인을 만든다
     }
   );
 
@@ -141,23 +152,28 @@ const useOnDrag = (onDrag, onDragEnd) => {
   const callbackRef = useRef({ onDrag, onDragEnd });
   callbackRef.current = { onDrag, onDragEnd };
 
+  const lastMousePosition = useRef<[number, number] | null>(null);
   useEffect(() => {
     if (!isDragging) return;
 
     const onMouseUp = (e: MouseEvent) => {
       setIsDragging(false);
-      callbackRef.current.onDragEnd();
+      callbackRef.current.onDragEnd([
+        lastMousePosition.current?.[0],
+        lastMousePosition.current?.[1],
+      ]);
     };
 
-    let prev = null;
+    lastMousePosition.current = null;
     const onMouseMove = (e: MouseEvent) => {
-      if (!prev) {
-        prev = [e.clientX, e.clientY];
+      if (!lastMousePosition.current) {
+        lastMousePosition.current = [e.clientX, e.clientY];
         return;
       }
 
-      callbackRef.current.onDrag([e.clientX - prev[0], e.clientY - prev[1]]);
-      prev = [e.clientX, e.clientY];
+      const [x, y] = lastMousePosition.current;
+      callbackRef.current.onDrag([e.clientX - x, e.clientY - y]);
+      lastMousePosition.current = [e.clientX, e.clientY];
     };
 
     window.addEventListener('mouseup', onMouseUp);
