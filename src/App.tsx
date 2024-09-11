@@ -11,10 +11,14 @@ function App() {
     {
       id: 1,
       position: [500, 500],
+      input: null,
+      output: 2,
     },
     {
       id: 2,
       position: [Math.random() * 500, Math.random() * 500],
+      input: 1,
+      output: null,
     },
   ]);
 
@@ -35,18 +39,46 @@ function App() {
       targetBasePoint.current = newNode;
     },
     ([x, y]) => {
-      const conflictedConnector = getNearByConnector(
-        [x, y],
+      const conflictedNode = getNearByConnector(
+        { position: [x, y], isInput: true },
         nodeMapRef.current
       );
-      if (!conflictedConnector) {
-        return;
-      }
-      if (conflictedConnector.node.id === targetBasePoint.current.id) {
+      if (!conflictedNode) {
         return;
       }
 
-      // 새 라인을 만든다
+      let newInputNode;
+      let newOutputNode;
+      if (isInput === true) {
+        newInputNode = {
+          ...targetBasePoint.current,
+          input: conflictedNode.id,
+        };
+        newOutputNode = {
+          ...conflictedNode,
+          output: targetBasePoint.current.id,
+        };
+      } else {
+        newInputNode = {
+          ...conflictedNode,
+          input: targetBasePoint.current.id,
+        };
+        newOutputNode = {
+          ...targetBasePoint.current,
+          output: conflictedNode.id,
+        };
+      }
+      setNodes((nodes) =>
+        nodes.map((node) => {
+          if (node.id === newInputNode.id) {
+            return newInputNode;
+          }
+          if (node.id === newOutputNode.id) {
+            return newOutputNode;
+          }
+          return node;
+        })
+      );
     }
   );
 
@@ -65,18 +97,26 @@ function App() {
   return (
     <>
       {nodes.map((node) => (
-        <Node
-          key={node.id}
-          position={node.position}
-          onMouseDownCard={handleMouseDown}
-          ref={(ref) => {
-            if (ref?.containerRef) {
-              nodeMapRef.current.set(node.id, ref.containerRef);
-            } else {
-              nodeMapRef.current.delete(node.id);
-            }
-          }}
-        />
+        <div key={node.id}>
+          <Node
+            key={node.id}
+            position={node.position}
+            onMouseDownCard={handleMouseDown}
+            ref={(ref) => {
+              if (ref?.containerRef) {
+                nodeMapRef.current.set(node.id, ref.containerRef);
+              } else {
+                nodeMapRef.current.delete(node.id);
+              }
+            }}
+          />
+          {node.output && (
+            <Line
+              startPoint={node.position}
+              endPoint={nodes.find((n) => n.id === node.output)?.position}
+            />
+          )}
+        </div>
       ))}
       ;
       <Line
