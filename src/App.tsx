@@ -25,9 +25,55 @@ function App() {
     },
   ]);
 
+  const isDragging = useRef(false);
+  const [inputPosition, setInputPosition] = useState<[number, number]>([0, 0]);
+  const [outputPosition, setOutputPosition] = useState<[number, number]>([
+    0, 0,
+  ]);
+
+  const endDragging = () => {
+    isDragging.current = false;
+    setInputPosition([0, 0]);
+    setOutputPosition([0, 0]);
+  };
+
+  const { startDrag: startConnectToOutput } = useOnDrag(
+    ({ position: [x, y] }) => {
+      setInputPosition([x, y]);
+    },
+    () => {
+      endDragging();
+    }
+  );
+
+  const setStartDragging = (pos: [number, number]) => {
+    isDragging.current = true;
+    setInputPosition(pos);
+    setOutputPosition(pos);
+  };
+
+  const handleMouseDownOntInput = (e: React.MouseEvent, node: Node) => {
+    startConnectToOutput();
+    setStartDragging([e.clientX, e.clientY]);
+  };
+
+  const { startDrag: startConnectToInput } = useOnDrag(
+    ({ position: [x, y] }) => {
+      setOutputPosition([x, y]);
+    },
+    () => {
+      endDragging();
+    }
+  );
+
+  const handleMouseDownOnOutput = (e: React.MouseEvent, node: Node) => {
+    startConnectToInput();
+    setStartDragging([e.clientX, e.clientY]);
+  };
+
   const targetBasePoint = useRef<Node | null>(null);
 
-  const { startDrag: startCardDrag } = useOnDrag(([x, y]) => {
+  const { startDrag: startCardDrag } = useOnDrag(({ vector: [x, y] }) => {
     if (!targetBasePoint.current) return;
 
     const newNode: Node = {
@@ -62,29 +108,25 @@ function App() {
                 nodeMapRef.current.delete(node.id);
               }
             }}
+            onMouseDownInput={(e) => handleMouseDownOntInput(e, node)}
+            onMouseDownOutput={(e) => handleMouseDownOnOutput(e, node)}
           />
-          {node.output && (
+          {node.output && getNode(node.output, nodes) && (
             <Line
-              startPoint={[
-                node.position[0] +
-                  (nodeMapRef.current.get(node.id)?.inputRelativePosition[0] ??
-                    0),
-                node.position[1] +
-                  (nodeMapRef.current.get(node.id)?.inputRelativePosition[1] ??
-                    0),
-              ]}
-              endPoint={[
-                (nodes.find((n) => n.id === node.output)?.position[0] ?? 0) +
-                  (nodeMapRef.current.get(node.id)?.outputRelativePosition[0] ??
-                    0),
-                (nodes.find((n) => n.id === node.output)?.position[1] ?? 0) +
-                  (nodeMapRef.current.get(node.id)?.outputRelativePosition[1] ??
-                    0),
-              ]}
+              startPoint={getInputPosition(
+                getNode(node.id, nodes),
+                nodeMapRef.current.get(node.id)
+              )}
+              endPoint={getOutputPosition(
+                getNode(node.output, nodes),
+                nodeMapRef.current.get(node.id)
+              )}
             />
           )}
         </div>
       ))}
+
+      <Line startPoint={outputPosition} endPoint={inputPosition} />
     </>
   );
 }
@@ -144,7 +186,13 @@ export const useDrag = (basePosition: [number, number] = [0, 0]) => {
 };
 
 const useOnDrag = (
-  onDrag: (position: [number, number]) => void,
+  onDrag: ({
+    position,
+    vector,
+  }: {
+    position: [number, number];
+    vector: [number, number];
+  }) => void,
   onDragEnd?: (position: [number, number]) => void
 ) => {
   const [isDragging, setIsDragging] = useState(false);
@@ -172,7 +220,10 @@ const useOnDrag = (
       }
 
       const [x, y] = lastMousePosition.current ?? [0, 0];
-      callbackRef.current.onDrag([e.clientX - x, e.clientY - y]);
+      callbackRef.current.onDrag({
+        position: [e.clientX, e.clientY],
+        vector: [e.clientX - x, e.clientY - y],
+      });
       lastMousePosition.current = [e.clientX, e.clientY];
     };
 
@@ -204,3 +255,27 @@ const hasCollision = (
 
   return true;
 };
+
+function getInputPosition(
+  node: Node,
+  nodeRef?: ForwardedNodeRef
+): [number, number] {
+  return [
+    node.position[0] + (nodeRef?.inputRelativePosition[0] ?? 0),
+    node.position[1] + (nodeRef?.inputRelativePosition[1] ?? 0),
+  ];
+}
+
+function getOutputPosition(
+  node: Node,
+  nodeRef?: ForwardedNodeRef
+): [number, number] {
+  return [
+    node.position[0] + (nodeRef?.outputRelativePosition[0] ?? 0),
+    node.position[1] + (nodeRef?.outputRelativePosition[1] ?? 0),
+  ];
+}
+
+function getNode(nodeId: number | null, nodes: Node[]): Node | undefined {
+  return nodes.find((node) => node.id === nodeId);
+}
