@@ -9,7 +9,13 @@ interface Props {
   position: [number, number];
 }
 
-export const Node = forwardRef<{ containerRef: HTMLDivElement }, Props>(
+export interface ForwardedNodeRef {
+  containerRef: HTMLDivElement | null;
+  inputRelativePosition: [number, number];
+  outputRelativePosition: [number, number];
+}
+
+export const Node = forwardRef<ForwardedNodeRef, Props>(
   (
     {
       className,
@@ -39,17 +45,22 @@ export const Node = forwardRef<{ containerRef: HTMLDivElement }, Props>(
     const inputRef = useRef<HTMLSpanElement>(null);
     useImperativeHandle(
       ref,
-      () => {
-        if (!containerRef.current) return {};
-        if (!inputRef.current) return {};
-        if (!outputRef.current) return {};
+      (): ForwardedNodeRef => {
+        const defaultReturn: ForwardedNodeRef = {
+          inputRelativePosition: [0, 0],
+          outputRelativePosition: [0, 0],
+          containerRef: null,
+        };
+        if (!containerRef.current) return defaultReturn;
+        if (!inputRef.current) return defaultReturn;
+        if (!outputRef.current) return defaultReturn;
 
         const container = containerRef.current.getBoundingClientRect();
 
         return {
           inputRelativePosition: [0, container.height / 2],
           outputRelativePosition: [+container.width, container.height / 2],
-          containerRef,
+          containerRef: containerRef.current,
         };
       },
       []
@@ -79,6 +90,7 @@ const Container = styled.div`
   border-radius: 8px;
   box-shadow: 0 2px 16px rgba(0, 0, 0, 0.1);
   z-index: 1;
+  -webkit-user-drag: none;
 `;
 
 const Connector = styled.span`

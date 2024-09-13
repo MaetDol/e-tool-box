@@ -1,13 +1,16 @@
 import { useEffect, useRef, useState } from 'react';
 import { Line } from './components/Line';
-import { Node } from './components/Node';
+import { ForwardedNodeRef, Node } from './components/Node';
+
+type Node = {
+  id: number;
+  position: [number, number];
+  input: number | null;
+  output: number | null;
+};
 
 function App() {
-  const drag = useDrag();
-  const dragCard = useDrag([500, 500]);
-  const nodeRef = useRef<any>(null);
-
-  const [nodes, setNodes] = useState<any[]>([
+  const [nodes, setNodes] = useState<Node[]>([
     {
       id: 1,
       position: [500, 500],
@@ -22,76 +25,26 @@ function App() {
     },
   ]);
 
-  const targetBasePoint = useRef<any>(null);
+  const targetBasePoint = useRef<Node | null>(null);
 
-  const { startDrag } = useOnDrag(
-    ([x, y]) => {
-      if (!targetBasePoint.current) return;
+  const { startDrag: startCardDrag } = useOnDrag(([x, y]) => {
+    if (!targetBasePoint.current) return;
 
-      const newNode = {
-        ...targetBasePoint.current,
-        position: [
-          targetBasePoint.current.position[0] + x,
-          targetBasePoint.current.position[1] + y,
-        ],
-      };
-      setNodes(nodes.map((node) => (node.id === newNode.id ? newNode : node)));
-      targetBasePoint.current = newNode;
-    },
-    ([x, y]) => {
-      const conflictedNode = getNearByConnector(
-        { position: [x, y], isInput: true },
-        nodeMapRef.current
-      );
-      if (!conflictedNode) {
-        return;
-      }
+    const newNode: Node = {
+      ...targetBasePoint.current,
+      position: [
+        targetBasePoint.current.position[0] + x,
+        targetBasePoint.current.position[1] + y,
+      ],
+    };
+    setNodes(nodes.map((node) => (node.id === newNode.id ? newNode : node)));
+    targetBasePoint.current = newNode;
+  });
 
-      let newInputNode;
-      let newOutputNode;
-      if (isInput === true) {
-        newInputNode = {
-          ...targetBasePoint.current,
-          input: conflictedNode.id,
-        };
-        newOutputNode = {
-          ...conflictedNode,
-          output: targetBasePoint.current.id,
-        };
-      } else {
-        newInputNode = {
-          ...conflictedNode,
-          input: targetBasePoint.current.id,
-        };
-        newOutputNode = {
-          ...targetBasePoint.current,
-          output: conflictedNode.id,
-        };
-      }
-      setNodes((nodes) =>
-        nodes.map((node) => {
-          if (node.id === newInputNode.id) {
-            return newInputNode;
-          }
-          if (node.id === newOutputNode.id) {
-            return newOutputNode;
-          }
-          return node;
-        })
-      );
-    }
-  );
-
-  const nodeMapRef = useRef<Map<number, HTMLDivElement>>(new Map());
-  const handleMouseDown = (e: React.MouseEvent) => {
-    const { clientX: x, clientY: y } = e;
-    const draggingNode = nodes.find((node) =>
-      hasCollision([x, y], node, nodeMapRef.current.get(node.id))
-    );
-    if (!draggingNode) return;
-
-    startDrag();
-    targetBasePoint.current = draggingNode;
+  const nodeMapRef = useRef<Map<number, ForwardedNodeRef>>(new Map());
+  const handleMouseDown = (e: React.MouseEvent, node: Node) => {
+    startCardDrag();
+    targetBasePoint.current = node;
   };
 
   return (
@@ -101,10 +54,10 @@ function App() {
           <Node
             key={node.id}
             position={node.position}
-            onMouseDownCard={handleMouseDown}
+            onMouseDownCard={(e) => handleMouseDown(e, node)}
             ref={(ref) => {
               if (ref?.containerRef) {
-                nodeMapRef.current.set(node.id, ref.containerRef);
+                nodeMapRef.current.set(node.id, ref);
               } else {
                 nodeMapRef.current.delete(node.id);
               }
@@ -112,22 +65,26 @@ function App() {
           />
           {node.output && (
             <Line
-              startPoint={node.position}
-              endPoint={nodes.find((n) => n.id === node.output)?.position}
+              startPoint={[
+                node.position[0] +
+                  (nodeMapRef.current.get(node.id)?.inputRelativePosition[0] ??
+                    0),
+                node.position[1] +
+                  (nodeMapRef.current.get(node.id)?.inputRelativePosition[1] ??
+                    0),
+              ]}
+              endPoint={[
+                (nodes.find((n) => n.id === node.output)?.position[0] ?? 0) +
+                  (nodeMapRef.current.get(node.id)?.outputRelativePosition[0] ??
+                    0),
+                (nodes.find((n) => n.id === node.output)?.position[1] ?? 0) +
+                  (nodeMapRef.current.get(node.id)?.outputRelativePosition[1] ??
+                    0),
+              ]}
             />
           )}
         </div>
       ))}
-      ;
-      <Line
-        startPoint={[
-          dragCard.posRef.current[0] +
-            (nodeRef.current?.inputRelativePosition[0] || 0),
-          dragCard.posRef.current[1] +
-            (nodeRef.current?.inputRelativePosition[1] || 0),
-        ]}
-        endPoint={drag.end}
-      />
     </>
   );
 }
@@ -186,7 +143,10 @@ export const useDrag = (basePosition: [number, number] = [0, 0]) => {
   };
 };
 
-const useOnDrag = (onDrag, onDragEnd) => {
+const useOnDrag = (
+  onDrag: (position: [number, number]) => void,
+  onDragEnd?: (position: [number, number]) => void
+) => {
   const [isDragging, setIsDragging] = useState(false);
 
   const callbackRef = useRef({ onDrag, onDragEnd });
@@ -198,9 +158,9 @@ const useOnDrag = (onDrag, onDragEnd) => {
 
     const onMouseUp = (e: MouseEvent) => {
       setIsDragging(false);
-      callbackRef.current.onDragEnd([
-        lastMousePosition.current?.[0],
-        lastMousePosition.current?.[1],
+      callbackRef.current.onDragEnd?.([
+        lastMousePosition.current?.[0] ?? e.clientX,
+        lastMousePosition.current?.[1] ?? e.clientY,
       ]);
     };
 
@@ -211,7 +171,7 @@ const useOnDrag = (onDrag, onDragEnd) => {
         return;
       }
 
-      const [x, y] = lastMousePosition.current;
+      const [x, y] = lastMousePosition.current ?? [0, 0];
       callbackRef.current.onDrag([e.clientX - x, e.clientY - y]);
       lastMousePosition.current = [e.clientX, e.clientY];
     };
