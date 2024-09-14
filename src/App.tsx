@@ -254,7 +254,7 @@ const useTryConnect = () => {
 
   const { startDrag: startConnectToOutput } = useOnDrag(
     ({ position: [x, y] }) => {
-      setStartPos([x, y]);
+      setEndPos([x, y]);
     },
     () => {
       endDragging();
@@ -272,24 +272,10 @@ const useTryConnect = () => {
     setStartDragging([e.clientX, e.clientY]);
   };
 
-  const { startDrag: startConnectToInput } = useOnDrag(
-    ({ position: [x, y] }) => {
-      setEndPos([x, y]);
-    },
-    () => {
-      endDragging();
-    }
-  );
-
-  const handleMouseDownOnOutput = (e: React.MouseEvent, node: Node) => {
-    startConnectToInput();
-    setStartDragging([e.clientX, e.clientY]);
-  };
-
   return {
     inputPosition: startPos,
     outputPosition: endPos,
     handleMouseDownOntInput,
-    handleMouseDownOnOutput,
+    handleMouseDownOnOutput: handleMouseDownOntInput,
   };
 };
