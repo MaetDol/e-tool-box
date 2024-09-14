@@ -26,7 +26,26 @@ function App() {
     },
   ]);
 
-  const { startDrag, startPos, endPos } = useTryConnect();
+  const nodeMapRef = useRef<Map<number, ForwardedNodeRef>>(new Map());
+  const { startDrag, startPos, endPos } = useTryConnect(
+    nodes,
+    nodeMapRef,
+    (output, input) => {
+      setNodes((prev) =>
+        prev.map((node) => {
+          const isOutputNode = output === node.id;
+          if (isOutputNode) {
+            return { ...node, output: input };
+          }
+          const isInputNode = input === node.id;
+          if (isInputNode) {
+            return { ...node, input: output };
+          }
+          return node;
+        })
+      );
+    }
+  );
 
   const targetBasePoint = useRef<Node | null>(null);
 
@@ -44,7 +63,6 @@ function App() {
     targetBasePoint.current = newNode;
   });
 
-  const nodeMapRef = useRef<Map<number, ForwardedNodeRef>>(new Map());
   const handleMouseDown = (e: React.MouseEvent, node: Node) => {
     startCardDrag();
     targetBasePoint.current = node;
@@ -81,16 +99,16 @@ function App() {
                   nodeMapRef.current.delete(node.id);
                 }
               }}
-              onMouseDownInput={(e) => startDrag(e, node)}
-              onMouseDownOutput={(e) => startDrag(e, node)}
+              onMouseDownInput={(e) => startDrag(e, node, true)}
+              onMouseDownOutput={(e) => startDrag(e, node, false)}
             />
             {node.output && getNode(node.output, nodes) && (
               <Line
-                startPoint={getInputPosition(
+                startPoint={getOutputPosition(
                   getNode(node.id, nodes),
                   nodeMapRef.current.get(node.id)
                 )}
-                endPoint={getOutputPosition(
+                endPoint={getInputPosition(
                   getNode(node.output, nodes),
                   nodeMapRef.current.get(node.id)
                 )}
@@ -258,13 +276,17 @@ function getNode(nodeId: number | null, nodes: Node[]): Node | undefined {
   return nodes.find((node) => node.id === nodeId);
 }
 
-const useTryConnect = () => {
-  const isDragging = useRef(false);
+const useTryConnect = (
+  nodes: Node[],
+  nodeMapRef: React.RefObject<Map<number, ForwardedNodeRef>>,
+  connect: (outputNodeId: number, inputNodeId: number) => void
+) => {
+  const draggingNodeRef = useRef<{ node: Node; isInput: boolean }>();
   const [startPos, setStartPos] = useState<[number, number]>([0, 0]);
   const [endPos, setEndPos] = useState<[number, number]>([0, 0]);
 
   const endDragging = () => {
-    isDragging.current = false;
+    draggingNodeRef.current = undefined;
     setStartPos([0, 0]);
     setEndPos([0, 0]);
   };
@@ -273,20 +295,42 @@ const useTryConnect = () => {
     ({ position: [x, y] }) => {
       setEndPos([x, y]);
     },
-    () => {
+    (position) => {
+      if (nodeMapRef.current && draggingNodeRef.current) {
+        const target = nodes.find((it) => {
+          if (it.id === draggingNodeRef.current?.node.id) return false;
+
+          const nodeRef = nodeMapRef.current?.get?.(it.id)?.containerRef;
+          if (!nodeRef) return false;
+
+          return hasCollision(position, it, nodeRef);
+        });
+
+        if (target) {
+          if (draggingNodeRef.current.isInput) {
+            connect(target.id, draggingNodeRef.current.node.id);
+          } else {
+            connect(draggingNodeRef.current.node.id, target.id);
+          }
+        }
+      }
       endDragging();
     }
   );
 
-  const setStartDragging = (pos: [number, number]) => {
-    isDragging.current = true;
+  const setStartDragging = (
+    pos: [number, number],
+    node: Node,
+    isInput: boolean
+  ) => {
+    draggingNodeRef.current = { node, isInput };
     setStartPos(pos);
     setEndPos(pos);
   };
 
-  const startDrag = (e: React.MouseEvent, node: Node) => {
+  const startDrag = (e: React.MouseEvent, node: Node, isInput: boolean) => {
     startConnectToOutput();
-    setStartDragging([e.clientX, e.clientY]);
+    setStartDragging([e.clientX, e.clientY], node, isInput);
   };
 
   return {
