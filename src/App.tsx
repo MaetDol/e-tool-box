@@ -275,7 +275,7 @@ function getNode(nodeId: number | null, nodes: Node[]): Node | undefined {
 const useTryConnect = (
   nodes: Node[],
   nodeMapRef: React.RefObject<Map<number, ForwardedNodeRef>>,
-  connect: (outputNodeId: number, inputNodeId: number) => void
+  connect: (outputNodeId: number, inputNodeId: number | null) => void
 ) => {
   const draggingNodeRef = useRef<{ node: Node; isInput: boolean }>();
   const [startPos, setStartPos] = useState<[number, number]>([0, 0]);
@@ -302,11 +302,13 @@ const useTryConnect = (
           return hasCollision(position, it, nodeRef);
         });
 
-        if (target) {
-          if (draggingNodeRef.current.isInput) {
-            connect(target.id, draggingNodeRef.current.node.id);
-          } else {
+        if (draggingNodeRef.current.isInput && target) {
+          connect(target.id, draggingNodeRef.current.node.id);
+        } else {
+          if (target) {
             connect(draggingNodeRef.current.node.id, target.id);
+          } else {
+            connect(draggingNodeRef.current.node.id, null);
           }
         }
       }
