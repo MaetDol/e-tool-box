@@ -25,12 +25,7 @@ function App() {
     },
   ]);
 
-  const {
-    handleMouseDownOnOutput,
-    handleMouseDownOntInput,
-    inputPosition,
-    outputPosition,
-  } = useTryConnect();
+  const { startDrag, startPos, endPos } = useTryConnect();
 
   const targetBasePoint = useRef<Node | null>(null);
 
@@ -69,8 +64,8 @@ function App() {
                 nodeMapRef.current.delete(node.id);
               }
             }}
-            onMouseDownInput={(e) => handleMouseDownOntInput(e, node)}
-            onMouseDownOutput={(e) => handleMouseDownOnOutput(e, node)}
+            onMouseDownInput={(e) => startDrag(e, node)}
+            onMouseDownOutput={(e) => startDrag(e, node)}
           />
           {node.output && getNode(node.output, nodes) && (
             <Line
@@ -87,7 +82,7 @@ function App() {
         </div>
       ))}
 
-      <Line startPoint={outputPosition} endPoint={inputPosition} />
+      <Line startPoint={endPos} endPoint={startPos} />
     </>
   );
 }
@@ -267,15 +262,15 @@ const useTryConnect = () => {
     setEndPos(pos);
   };
 
-  const handleMouseDownOntInput = (e: React.MouseEvent, node: Node) => {
+  const startDrag = (e: React.MouseEvent, node: Node) => {
     startConnectToOutput();
     setStartDragging([e.clientX, e.clientY]);
   };
 
   return {
-    inputPosition: startPos,
-    outputPosition: endPos,
-    handleMouseDownOntInput,
-    handleMouseDownOnOutput: handleMouseDownOntInput,
+    startPos,
+    endPos,
+    startDrag: startDrag,
+    handleMouseDownOnOutput: startDrag,
   };
 };
