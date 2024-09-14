@@ -3,6 +3,7 @@ import { Line } from "./components/Line";
 import { ForwardedNodeRef, Node as NodeBase } from "./components/Node";
 import styled from "styled-components";
 import { Node } from "./types";
+import { useOnDrag, useTryConnect } from "./hooks";
 
 function App() {
   const [nodes, setNodes] = useState<Node[]>([
@@ -168,77 +169,6 @@ export const useDrag = (basePosition: [number, number] = [0, 0]) => {
   };
 };
 
-const useOnDrag = (
-  onDrag: ({
-    position,
-    vector,
-  }: {
-    position: [number, number];
-    vector: [number, number];
-  }) => void,
-  onDragEnd?: (position: [number, number]) => void
-) => {
-  const [isDragging, setIsDragging] = useState(false);
-
-  const callbackRef = useRef({ onDrag, onDragEnd });
-  callbackRef.current = { onDrag, onDragEnd };
-
-  const lastMousePosition = useRef<[number, number] | null>(null);
-  useEffect(() => {
-    if (!isDragging) return;
-
-    const onMouseUp = (e: MouseEvent) => {
-      setIsDragging(false);
-      callbackRef.current.onDragEnd?.([
-        lastMousePosition.current?.[0] ?? e.clientX,
-        lastMousePosition.current?.[1] ?? e.clientY,
-      ]);
-    };
-
-    lastMousePosition.current = null;
-    const onMouseMove = (e: MouseEvent) => {
-      if (!lastMousePosition.current) {
-        lastMousePosition.current = [e.clientX, e.clientY];
-        return;
-      }
-
-      const [x, y] = lastMousePosition.current ?? [0, 0];
-      callbackRef.current.onDrag({
-        position: [e.clientX, e.clientY],
-        vector: [e.clientX - x, e.clientY - y],
-      });
-      lastMousePosition.current = [e.clientX, e.clientY];
-    };
-
-    window.addEventListener("mouseup", onMouseUp);
-    window.addEventListener("mousemove", onMouseMove);
-
-    return () => {
-      window.removeEventListener("mouseup", onMouseUp);
-      window.removeEventListener("mousemove", onMouseMove);
-    };
-  }, [isDragging]);
-
-  return {
-    startDrag: () => setIsDragging(true),
-    endDrag: () => setIsDragging(false),
-  };
-};
-
-const hasCollision = (
-  [x, y]: [number, number],
-  node: any,
-  nodeElem: HTMLDivElement
-) => {
-  if (x < node.position[0]) return false;
-  if (y < node.position[1]) return false;
-
-  if (x > node.position[0] + nodeElem.offsetWidth) return false;
-  if (y > node.position[1] + nodeElem.offsetHeight) return false;
-
-  return true;
-};
-
 function getInputPosition(
   node: Node,
   nodeRef?: ForwardedNodeRef
@@ -262,69 +192,3 @@ function getOutputPosition(
 function getNode(nodeId: number | null, nodes: Node[]): Node | undefined {
   return nodes.find((node) => node.id === nodeId);
 }
-
-const useTryConnect = (
-  nodes: Node[],
-  nodeMapRef: React.RefObject<Map<number, ForwardedNodeRef>>,
-  connect: (outputNodeId: number, inputNodeId: number | null) => void
-) => {
-  const draggingNodeRef = useRef<{ node: Node; isInput: boolean }>();
-  const [startPos, setStartPos] = useState<[number, number]>([0, 0]);
-  const [endPos, setEndPos] = useState<[number, number]>([0, 0]);
-
-  const endDragging = () => {
-    draggingNodeRef.current = undefined;
-    setStartPos([0, 0]);
-    setEndPos([0, 0]);
-  };
-
-  const { startDrag: startConnectToOutput } = useOnDrag(
-    ({ position: [x, y] }) => {
-      setEndPos([x, y]);
-    },
-    (position) => {
-      if (nodeMapRef.current && draggingNodeRef.current) {
-        const target = nodes.find((it) => {
-          if (it.id === draggingNodeRef.current?.node.id) return false;
-
-          const nodeRef = nodeMapRef.current?.get?.(it.id)?.containerRef;
-          if (!nodeRef) return false;
-
-          return hasCollision(position, it, nodeRef);
-        });
-
-        if (draggingNodeRef.current.isInput && target) {
-          connect(target.id, draggingNodeRef.current.node.id);
-        } else {
-          if (target) {
-            connect(draggingNodeRef.current.node.id, target.id);
-          } else {
-            connect(draggingNodeRef.current.node.id, null);
-          }
-        }
-      }
-      endDragging();
-    }
-  );
-
-  const setStartDragging = (
-    pos: [number, number],
-    node: Node,
-    isInput: boolean
-  ) => {
-    draggingNodeRef.current = { node, isInput };
-    setStartPos(pos);
-    setEndPos(pos);
-  };
-
-  const startDrag = (e: React.MouseEvent, node: Node, isInput: boolean) => {
-    startConnectToOutput();
-    setStartDragging([e.clientX, e.clientY], node, isInput);
-  };
-
-  return {
-    startPos,
-    endPos,
-    startDrag: startDrag,
-  };
-};
