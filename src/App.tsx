@@ -1,13 +1,8 @@
 import { useEffect, useRef, useState } from "react";
 import { Line } from "./components/Line";
-import { ForwardedNodeRef, Node } from "./components/Node";
+import { ForwardedNodeRef, Node as NodeBase } from "./components/Node";
 import styled from "styled-components";
-
-type Node = {
-  id: number;
-  position: [number, number];
-  output: number | null;
-};
+import { Node } from "./types";
 
 function App() {
   const [nodes, setNodes] = useState<Node[]>([
@@ -80,7 +75,7 @@ function App() {
       <Container>
         {nodes.map((node) => (
           <div key={node.id}>
-            <Node
+            <NodeBase
               key={node.id}
               position={node.position}
               onMouseDownCard={(e) => handleMouseDown(e, node)}
