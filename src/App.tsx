@@ -1,6 +1,6 @@
-import { useEffect, useRef, useState } from 'react';
-import { Line } from './components/Line';
-import { ForwardedNodeRef, Node } from './components/Node';
+import { useEffect, useRef, useState } from "react";
+import { Line } from "./components/Line";
+import { ForwardedNodeRef, Node } from "./components/Node";
 
 type Node = {
   id: number;
@@ -25,51 +25,12 @@ function App() {
     },
   ]);
 
-  const isDragging = useRef(false);
-  const [inputPosition, setInputPosition] = useState<[number, number]>([0, 0]);
-  const [outputPosition, setOutputPosition] = useState<[number, number]>([
-    0, 0,
-  ]);
-
-  const endDragging = () => {
-    isDragging.current = false;
-    setInputPosition([0, 0]);
-    setOutputPosition([0, 0]);
-  };
-
-  const { startDrag: startConnectToOutput } = useOnDrag(
-    ({ position: [x, y] }) => {
-      setInputPosition([x, y]);
-    },
-    () => {
-      endDragging();
-    }
-  );
-
-  const setStartDragging = (pos: [number, number]) => {
-    isDragging.current = true;
-    setInputPosition(pos);
-    setOutputPosition(pos);
-  };
-
-  const handleMouseDownOntInput = (e: React.MouseEvent, node: Node) => {
-    startConnectToOutput();
-    setStartDragging([e.clientX, e.clientY]);
-  };
-
-  const { startDrag: startConnectToInput } = useOnDrag(
-    ({ position: [x, y] }) => {
-      setOutputPosition([x, y]);
-    },
-    () => {
-      endDragging();
-    }
-  );
-
-  const handleMouseDownOnOutput = (e: React.MouseEvent, node: Node) => {
-    startConnectToInput();
-    setStartDragging([e.clientX, e.clientY]);
-  };
+  const {
+    handleMouseDownOnOutput,
+    handleMouseDownOntInput,
+    inputPosition,
+    outputPosition,
+  } = useTryConnect();
 
   const targetBasePoint = useRef<Node | null>(null);
 
@@ -167,12 +128,12 @@ export const useDrag = (basePosition: [number, number] = [0, 0]) => {
       prev = [e.clientX, e.clientY];
     };
 
-    window.addEventListener('mouseup', onMouseUp);
-    window.addEventListener('mousemove', onMouseMove);
+    window.addEventListener("mouseup", onMouseUp);
+    window.addEventListener("mousemove", onMouseMove);
 
     return () => {
-      window.removeEventListener('mouseup', onMouseUp);
-      window.removeEventListener('mousemove', onMouseMove);
+      window.removeEventListener("mouseup", onMouseUp);
+      window.removeEventListener("mousemove", onMouseMove);
     };
   }, [start]);
 
@@ -227,12 +188,12 @@ const useOnDrag = (
       lastMousePosition.current = [e.clientX, e.clientY];
     };
 
-    window.addEventListener('mouseup', onMouseUp);
-    window.addEventListener('mousemove', onMouseMove);
+    window.addEventListener("mouseup", onMouseUp);
+    window.addEventListener("mousemove", onMouseMove);
 
     return () => {
-      window.removeEventListener('mouseup', onMouseUp);
-      window.removeEventListener('mousemove', onMouseMove);
+      window.removeEventListener("mouseup", onMouseUp);
+      window.removeEventListener("mousemove", onMouseMove);
     };
   }, [isDragging]);
 
@@ -279,3 +240,58 @@ function getOutputPosition(
 function getNode(nodeId: number | null, nodes: Node[]): Node | undefined {
   return nodes.find((node) => node.id === nodeId);
 }
+
+const useTryConnect = () => {
+  const isDragging = useRef(false);
+  const [inputPosition, setInputPosition] = useState<[number, number]>([0, 0]);
+  const [outputPosition, setOutputPosition] = useState<[number, number]>([
+    0, 0,
+  ]);
+
+  const endDragging = () => {
+    isDragging.current = false;
+    setInputPosition([0, 0]);
+    setOutputPosition([0, 0]);
+  };
+
+  const { startDrag: startConnectToOutput } = useOnDrag(
+    ({ position: [x, y] }) => {
+      setInputPosition([x, y]);
+    },
+    () => {
+      endDragging();
+    }
+  );
+
+  const setStartDragging = (pos: [number, number]) => {
+    isDragging.current = true;
+    setInputPosition(pos);
+    setOutputPosition(pos);
+  };
+
+  const handleMouseDownOntInput = (e: React.MouseEvent, node: Node) => {
+    startConnectToOutput();
+    setStartDragging([e.clientX, e.clientY]);
+  };
+
+  const { startDrag: startConnectToInput } = useOnDrag(
+    ({ position: [x, y] }) => {
+      setOutputPosition([x, y]);
+    },
+    () => {
+      endDragging();
+    }
+  );
+
+  const handleMouseDownOnOutput = (e: React.MouseEvent, node: Node) => {
+    startConnectToInput();
+    setStartDragging([e.clientX, e.clientY]);
+  };
+
+  return {
+    inputPosition,
+    outputPosition,
+    handleMouseDownOntInput,
+    handleMouseDownOnOutput,
+  };
+};
