@@ -117,58 +117,6 @@ const Container = styled.div`
   position: relative;
 `;
 
-export const useDrag = (basePosition: [number, number] = [0, 0]) => {
-  const onDragRef = useRef(false);
-  const [start, setStart] = useState<[number, number]>([0, 0]);
-  const [end, setEnd] = useState<[number, number]>([0, 0]);
-  const posRef = useRef(basePosition);
-  const vectorRef = useRef([0, 0]);
-
-  const onMouseDown = (e: React.MouseEvent) => {
-    setStart([e.clientX, e.clientY]);
-    onDragRef.current = true;
-  };
-
-  useEffect(() => {
-    const onMouseUp = () => {
-      onDragRef.current = false;
-      vectorRef.current = [0, 0];
-    };
-
-    let prev = [NaN, NaN];
-    const onMouseMove = (e: MouseEvent) => {
-      if (!onDragRef.current) return;
-      if (isNaN(prev[0])) {
-        prev = [e.clientX, e.clientY];
-        return;
-      }
-      setEnd([e.clientX, e.clientY]);
-      vectorRef.current = [e.clientX - prev[0], e.clientY - prev[1]];
-      posRef.current = [
-        posRef.current[0] + vectorRef.current[0],
-        posRef.current[1] + vectorRef.current[1],
-      ];
-      prev = [e.clientX, e.clientY];
-    };
-
-    window.addEventListener("mouseup", onMouseUp);
-    window.addEventListener("mousemove", onMouseMove);
-
-    return () => {
-      window.removeEventListener("mouseup", onMouseUp);
-      window.removeEventListener("mousemove", onMouseMove);
-    };
-  }, [start]);
-
-  return {
-    start,
-    end,
-    onMouseDown,
-    posRef,
-    vectorRef,
-  };
-};
-
 function getInputPosition(
   node: Node,
   nodeRef?: ForwardedNodeRef
