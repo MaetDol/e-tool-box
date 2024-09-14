@@ -1,6 +1,9 @@
-import { useEffect, useRef, useState } from "react";
+import { useRef, useState } from "react";
 import { Line } from "./components/Line";
-import { ForwardedNodeRef, Node as NodeBase } from "./components/Node";
+import {
+  ForwardedNodeRef,
+  ConnectableNode as NodeBase,
+} from "./components/ConnectableNode";
 import styled from "styled-components";
 import { Node } from "./types";
 import { useOnDrag, useTryConnect } from "./hooks";

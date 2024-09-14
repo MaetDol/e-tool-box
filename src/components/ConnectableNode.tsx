@@ -1,5 +1,5 @@
-import { forwardRef, useImperativeHandle, useRef } from 'react';
-import styled from 'styled-components';
+import { forwardRef, useImperativeHandle, useRef } from "react";
+import styled from "styled-components";
 
 interface Props {
   className?: string;
@@ -15,7 +15,7 @@ export interface ForwardedNodeRef {
   outputRelativePosition: [number, number];
 }
 
-export const Node = forwardRef<ForwardedNodeRef, Props>(
+export const ConnectableNode = forwardRef<ForwardedNodeRef, Props>(
   (
     {
       className,

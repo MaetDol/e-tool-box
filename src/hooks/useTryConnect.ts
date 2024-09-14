@@ -1,5 +1,5 @@
 import { useRef, useState } from "react";
-import { ForwardedNodeRef } from "../components/Node";
+import { ForwardedNodeRef } from "../components/ConnectableNode";
 import { useOnDrag } from "./useOnDrag";
 import { Node } from "../types";
 import { hasCollision } from "../utils";
