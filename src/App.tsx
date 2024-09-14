@@ -6,7 +6,7 @@ import {
 } from "./components/ConnectableNode";
 import styled from "styled-components";
 import { Node } from "./types";
-import { useOnDrag, useTryConnect } from "./hooks";
+import { useDragNode, useOnDrag, useTryConnect } from "./hooks";
 
 function App() {
   const [nodes, setNodes] = useState<Node[]>([
@@ -39,26 +39,7 @@ function App() {
     }
   );
 
-  const targetBasePoint = useRef<Node | null>(null);
-
-  const { startDrag: startCardDrag } = useOnDrag(({ vector: [x, y] }) => {
-    if (!targetBasePoint.current) return;
-
-    const newNode: Node = {
-      ...targetBasePoint.current,
-      position: [
-        targetBasePoint.current.position[0] + x,
-        targetBasePoint.current.position[1] + y,
-      ],
-    };
-    setNodes(nodes.map((node) => (node.id === newNode.id ? newNode : node)));
-    targetBasePoint.current = newNode;
-  });
-
-  const handleMouseDown = (e: React.MouseEvent, node: Node) => {
-    startCardDrag();
-    targetBasePoint.current = node;
-  };
+  const { handleMouseDown } = useDragNode({ nodes, setNodes });
 
   return (
     <div>
