@@ -37,10 +37,6 @@ function App() {
           if (isOutputNode) {
             return { ...node, output: input };
           }
-          const isInputNode = input === node.id;
-          if (isInputNode) {
-            return { ...node, input: output };
-          }
           return node;
         })
       );
