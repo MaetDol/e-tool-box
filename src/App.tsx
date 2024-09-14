@@ -6,7 +6,6 @@ import styled from "styled-components";
 type Node = {
   id: number;
   position: [number, number];
-  input: number | null;
   output: number | null;
 };
 
@@ -15,13 +14,11 @@ function App() {
     {
       id: 1,
       position: [500, 500],
-      input: null,
       output: 2,
     },
     {
       id: 2,
       position: [Math.random() * 500, Math.random() * 500],
-      input: 1,
       output: null,
     },
   ]);
@@ -30,12 +27,12 @@ function App() {
   const { startDrag, startPos, endPos } = useTryConnect(
     nodes,
     nodeMapRef,
-    (output, input) => {
+    (from, to) => {
       setNodes((prev) =>
         prev.map((node) => {
-          const isOutputNode = output === node.id;
-          if (isOutputNode) {
-            return { ...node, output: input };
+          const isBaseNode = from === node.id;
+          if (isBaseNode) {
+            return { ...node, output: to };
           }
           return node;
         })
@@ -73,7 +70,6 @@ function App() {
             {
               id: Math.max(...prev.map((node) => node.id)) + 1,
               position: [Math.random() * 500, Math.random() * 500],
-              input: null,
               output: null,
             },
           ])
