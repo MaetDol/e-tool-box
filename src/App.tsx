@@ -243,20 +243,18 @@ function getNode(nodeId: number | null, nodes: Node[]): Node | undefined {
 
 const useTryConnect = () => {
   const isDragging = useRef(false);
-  const [inputPosition, setInputPosition] = useState<[number, number]>([0, 0]);
-  const [outputPosition, setOutputPosition] = useState<[number, number]>([
-    0, 0,
-  ]);
+  const [startPos, setStartPos] = useState<[number, number]>([0, 0]);
+  const [endPos, setEndPos] = useState<[number, number]>([0, 0]);
 
   const endDragging = () => {
     isDragging.current = false;
-    setInputPosition([0, 0]);
-    setOutputPosition([0, 0]);
+    setStartPos([0, 0]);
+    setEndPos([0, 0]);
   };
 
   const { startDrag: startConnectToOutput } = useOnDrag(
     ({ position: [x, y] }) => {
-      setInputPosition([x, y]);
+      setStartPos([x, y]);
     },
     () => {
       endDragging();
@@ -265,8 +263,8 @@ const useTryConnect = () => {
 
   const setStartDragging = (pos: [number, number]) => {
     isDragging.current = true;
-    setInputPosition(pos);
-    setOutputPosition(pos);
+    setStartPos(pos);
+    setEndPos(pos);
   };
 
   const handleMouseDownOntInput = (e: React.MouseEvent, node: Node) => {
@@ -276,7 +274,7 @@ const useTryConnect = () => {
 
   const { startDrag: startConnectToInput } = useOnDrag(
     ({ position: [x, y] }) => {
-      setOutputPosition([x, y]);
+      setEndPos([x, y]);
     },
     () => {
       endDragging();
@@ -289,8 +287,8 @@ const useTryConnect = () => {
   };
 
   return {
-    inputPosition,
-    outputPosition,
+    inputPosition: startPos,
+    outputPosition: endPos,
     handleMouseDownOntInput,
     handleMouseDownOnOutput,
   };
