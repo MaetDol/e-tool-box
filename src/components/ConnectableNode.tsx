@@ -85,12 +85,12 @@ export const ConnectableNode = forwardRef<ForwardedNodeRef, Props>(
 const Container = styled.div`
   background-color: white;
   position: absolute;
-  width: 180px;
-  height: 120px;
   border-radius: 8px;
   box-shadow: 0 2px 16px rgba(0, 0, 0, 0.1);
   z-index: 1;
   -webkit-user-drag: none;
+  min-width: 120px;
+  min-height: 180px;
 `;
 
 const Connector = styled.span`

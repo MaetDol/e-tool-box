@@ -24,7 +24,7 @@ export const useDragNode = ({ nodes, setNodes }: Parameters) => {
     targetBasePoint.current = newNode;
   });
 
-  const handleMouseDown = (e: React.MouseEvent, node: Node) => {
+  const handleMouseDown = (_e: React.MouseEvent, node: Node) => {
     startCardDrag();
     targetBasePoint.current = node;
   };

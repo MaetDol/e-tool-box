@@ -6,7 +6,7 @@ import {
 } from "./components/ConnectableNode";
 import styled from "styled-components";
 import { Node } from "./types";
-import { useDragNode, useOnDrag, useTryConnect } from "./hooks";
+import { useDragNode, useTryConnect } from "./hooks";
 
 function App() {
   const [nodes, setNodes] = useState<Node[]>([
