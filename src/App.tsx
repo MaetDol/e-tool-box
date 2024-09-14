@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { Line } from "./components/Line";
 import { ForwardedNodeRef, Node } from "./components/Node";
+import styled from "styled-components";
 
 type Node = {
   id: number;
@@ -50,44 +51,65 @@ function App() {
   };
 
   return (
-    <>
-      {nodes.map((node) => (
-        <div key={node.id}>
-          <Node
-            key={node.id}
-            position={node.position}
-            onMouseDownCard={(e) => handleMouseDown(e, node)}
-            ref={(ref) => {
-              if (ref?.containerRef) {
-                nodeMapRef.current.set(node.id, ref);
-              } else {
-                nodeMapRef.current.delete(node.id);
-              }
-            }}
-            onMouseDownInput={(e) => startDrag(e, node)}
-            onMouseDownOutput={(e) => startDrag(e, node)}
-          />
-          {node.output && getNode(node.output, nodes) && (
-            <Line
-              startPoint={getInputPosition(
-                getNode(node.id, nodes),
-                nodeMapRef.current.get(node.id)
-              )}
-              endPoint={getOutputPosition(
-                getNode(node.output, nodes),
-                nodeMapRef.current.get(node.id)
-              )}
+    <div>
+      <button
+        onClick={() =>
+          setNodes((prev) => [
+            ...prev,
+            {
+              id: Math.max(...prev.map((node) => node.id)) + 1,
+              position: [Math.random() * 500, Math.random() * 500],
+              input: null,
+              output: null,
+            },
+          ])
+        }
+      >
+        노드 추가하기
+      </button>
+      <Container>
+        {nodes.map((node) => (
+          <div key={node.id}>
+            <Node
+              key={node.id}
+              position={node.position}
+              onMouseDownCard={(e) => handleMouseDown(e, node)}
+              ref={(ref) => {
+                if (ref?.containerRef) {
+                  nodeMapRef.current.set(node.id, ref);
+                } else {
+                  nodeMapRef.current.delete(node.id);
+                }
+              }}
+              onMouseDownInput={(e) => startDrag(e, node)}
+              onMouseDownOutput={(e) => startDrag(e, node)}
             />
-          )}
-        </div>
-      ))}
+            {node.output && getNode(node.output, nodes) && (
+              <Line
+                startPoint={getInputPosition(
+                  getNode(node.id, nodes),
+                  nodeMapRef.current.get(node.id)
+                )}
+                endPoint={getOutputPosition(
+                  getNode(node.output, nodes),
+                  nodeMapRef.current.get(node.id)
+                )}
+              />
+            )}
+          </div>
+        ))}
 
-      <Line startPoint={endPos} endPoint={startPos} />
-    </>
+        <Line startPoint={endPos} endPoint={startPos} />
+      </Container>
+    </div>
   );
 }
 
 export default App;
+
+const Container = styled.div`
+  position: relative;
+`;
 
 export const useDrag = (basePosition: [number, number] = [0, 0]) => {
   const onDragRef = useRef(false);
@@ -271,6 +293,5 @@ const useTryConnect = () => {
     startPos,
     endPos,
     startDrag: startDrag,
-    handleMouseDownOnOutput: startDrag,
   };
 };
