@@ -6,8 +6,8 @@ import { hasCollision } from "../utils";
 
 export const useTryConnect = (
   nodes: Node[],
-  nodeMapRef: React.RefObject<Map<number, ForwardedNodeRef>>,
-  connect: (outputNodeId: number, inputNodeId: number | null) => void
+  nodeMapRef: React.RefObject<Map<string, ForwardedNodeRef>>,
+  connect: (outputNodeId: string, inputNodeId: string | null) => void
 ) => {
   const draggingNodeRef = useRef<{ node: Node; isInput: boolean }>();
   const [startPos, setStartPos] = useState<[number, number]>([0, 0]);

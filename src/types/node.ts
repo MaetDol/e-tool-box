@@ -1,7 +1,7 @@
 import { Position } from "./position";
 
 export type Node = {
-  id: number;
+  id: string;
   position: Position;
-  output: number | null;
+  output: string | null;
 };
