@@ -1,4 +1,4 @@
-import styled from 'styled-components';
+import styled from "styled-components";
 
 interface Props {
   startPoint: [number, number];
@@ -8,7 +8,7 @@ interface Props {
 export const Line = ({ endPoint, startPoint }: Props) => {
   return (
     <Svg
-      style={{ position: 'absolute' }}
+      style={{ position: "absolute" }}
       width={window.innerWidth}
       height={window.innerHeight}
     >
@@ -25,5 +25,7 @@ export const Line = ({ endPoint, startPoint }: Props) => {
 
 const Svg = styled.svg`
   position: absolute;
+  user-select: none;
+  pointer-events: none;
   -webkit-user-drag: none;
 `;
