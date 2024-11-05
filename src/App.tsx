@@ -43,14 +43,17 @@ function App() {
   const printLog = () => {
     const result = [...questions.current.values()].map((it) => {
       // option 에 nextPageId 가 있는지
-      const question = it.options.map((o) => {
-        const node = getNode(o.id, nodes);
-        if (node?.output) {
-          o.nextPageId = node.output;
-        }
+      const question = {
+        ...it,
+        options: it.options.map((o) => {
+          const node = getNode(o.id, nodes);
+          if (node?.output) {
+            o.nextPageId = node.output;
+          }
 
-        return o;
-      });
+          return o;
+        }),
+      };
 
       const nextPageId = nodes.find((n) => n.id === it.id)?.output;
       return {
