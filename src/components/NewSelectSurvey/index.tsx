@@ -110,7 +110,7 @@ export const NewSelectSurvey = ({
             onChange={(e) =>
               handleAttrChange(
                 "choiceType",
-                e.target.checked ? "SINGLE" : "MULTIPLE"
+                e.target.checked ? "MULTIPLE" : "SINGLE"
               )
             }
           />
